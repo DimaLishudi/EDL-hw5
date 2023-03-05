@@ -53,9 +53,10 @@ class Net(nn.Module):
         output = self.fc2(x)
         return output
 
-
-def average_gradients(model):
-    size = float(dist.get_world_size())
+# added scale: we need to divide by grad_accum_steps
+# otherwise for each batch size we need to choose new step size
+def average_gradients(model, scale=1):
+    size = float(dist.get_world_size()) * scale
     for param in model.parameters():
         dist.all_reduce(param.grad.data, op=dist.ReduceOp.SUM)
         param.grad.data /= size
@@ -76,6 +77,7 @@ def run_training(rank, size):
     )
     # where's the validation dataset?
     loader = DataLoader(dataset, sampler=DistributedSampler(dataset, size, rank), batch_size=64)
+    grad_accum_steps = 2
 
     model = Net()
     device = torch.device("cpu")  # replace with "cuda" afterwards
@@ -84,24 +86,27 @@ def run_training(rank, size):
 
     num_batches = len(loader)
 
+    optimizer.zero_grad()
     for _ in range(10):
         epoch_loss = torch.zeros((1,), device=device)
 
-        for data, target in loader:
+        for i, (data, target) in enumerate(loader):
             data = data.to(device)
             target = target.to(device)
 
-            optimizer.zero_grad()
             output = model(data)
             loss = torch.nn.functional.cross_entropy(output, target)
             epoch_loss += loss.detach()
             loss.backward()
-            average_gradients(model)
-            optimizer.step()
+            if (i+1) % grad_accum_steps == 0:
+                average_gradients(model, grad_accum_steps)
+                optimizer.step()
+                optimizer.zero_grad()
 
             acc = (output.argmax(dim=1) == target).float().mean()
 
-            print(f"Rank {dist.get_rank()}, loss: {epoch_loss / num_batches}, acc: {acc}")
+            if dist.get_rank() == 0:
+                print(f"Rank {dist.get_rank()}, loss: {epoch_loss / num_batches}, acc: {acc}")
             epoch_loss = 0
         # where's the validation loop?
 
