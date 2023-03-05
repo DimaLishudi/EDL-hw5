@@ -17,15 +17,51 @@ class sync_batch_norm(Function):
     """
 
     @staticmethod
-    def forward(ctx, input, running_mean, running_std, eps: float, momentum: float):
+    def forward(ctx, input, running_mean, running_var, eps: float, momentum: float):
         # Compute statistics, sync statistics, apply them to the input
         # Also, store relevant quantities to be used on the backward pass with `ctx.save_for_backward`
-        pass
+        
+        batch_size, num_features = input.shape
+        msg = torch.empty(2*num_features + 1)
+        msg[0:num_features] = input.sum(dim=0)                   # first moment
+        msg[num_features:2*num_features] = (input**2).sum(dim=0) # second moment
+        msg[-1] = batch_size # local batch size
+
+        dist.all_reduce(msg, dist.ReduceOp.SUM)
+        
+        mean = msg[0:num_features] / msg[-1]
+        var = msg[num_features:2*num_features] / msg[-1] - mean
+        sqrt_var = torch.sqrt(var + eps)
+
+        t = input - mean
+        res = t / sqrt_var
+
+        running_mean = running_mean * (1 - momentum) + mean * momentum
+        running_var = running_var * (1 - momentum) + var * momentum
+        
+        ctx.save_for_backward(t, var, msg[-1])
+        return res
 
     @staticmethod
     def backward(ctx, grad_output):
         # don't forget to return a tuple of gradients wrt all arguments of `forward`!
-        pass
+        # Derivation of the following formulas are presented in report.ipynb
+        # there g - grad_output
+        t, s, B = ctx.saved_tensors
+        num_features = t.shape[1]
+
+        msg = torch.empty(3*num_features)
+        msg[:num_features] = grad_output.sum(dim=0)
+        msg[num_features:2*num_features] = t.sum(dim=0)
+        msg[2*num_features:] = (g*t).sum(dim=0)
+        dist.all_reduce(msg, dist.ReduceOp.SUM)
+
+        res = grad_output / s \
+            - t * msg[2*num_features:] / (B * s**3) \
+            - msg[:num_features] / (B * s) \
+            + msg[num_features:2*num_features] * msg[2*num_features:] / (B**2 * s**3)
+            
+        return res, None, None, None, None
 
 
 class SyncBatchNorm(_BatchNorm):
@@ -46,8 +82,14 @@ class SyncBatchNorm(_BatchNorm):
         )
         # your code here
         self.running_mean = torch.zeros((num_features,))
-        self.running_std = torch.ones((num_features,))
+        self.running_var = torch.ones((num_features,)) # I use var instead of std for convenience
+        self.bn_func = sync_batch_norm.apply
+        # num_features, eps, momentum are saved in parent class
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        # You will probably need to use `sync_batch_norm` from above
-        pass
+        if not self.training and self.track_running_stats:
+            sqrt_var = torch.sqrt(self.running_var + self.eps)
+            return (input - self.running_mean) / sqrt_var
+        else:
+            return self.bn_func(input, self.running_mean, self.running_var, self.eps, self.momentum)
+
