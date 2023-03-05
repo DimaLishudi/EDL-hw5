@@ -53,7 +53,7 @@ class sync_batch_norm(Function):
         msg = torch.empty(3*num_features)
         msg[:num_features] = grad_output.sum(dim=0)
         msg[num_features:2*num_features] = t.sum(dim=0)
-        msg[2*num_features:] = (g*t).sum(dim=0)
+        msg[2*num_features:] = (grad_output*t).sum(dim=0)
         dist.all_reduce(msg, dist.ReduceOp.SUM)
 
         res = grad_output / s \
