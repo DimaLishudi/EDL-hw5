@@ -87,10 +87,12 @@ def run_training(rank, size):
     num_batches = len(loader)
 
     optimizer.zero_grad()
+    batch_count = 0
     for _ in range(10):
         epoch_loss = torch.zeros((1,), device=device)
 
-        for i, (data, target) in enumerate(loader):
+        for data, target in loader:
+            batch_count += 1
             data = data.to(device)
             target = target.to(device)
 
@@ -98,7 +100,7 @@ def run_training(rank, size):
             loss = torch.nn.functional.cross_entropy(output, target)
             epoch_loss += loss.detach()
             loss.backward()
-            if (i+1) % grad_accum_steps == 0:
+            if batch_count % grad_accum_steps == 0:
                 average_gradients(model, grad_accum_steps)
                 optimizer.step()
                 optimizer.zero_grad()
