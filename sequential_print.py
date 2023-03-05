@@ -18,8 +18,20 @@ def run_sequential(rank, size, num_iter=10):
     Process 2
     ```
     """
-
-    pass
+    for cur_iter in range(num_iter):
+        for i in range(size):
+            if rank != i:
+                dist.barrier()
+            else:
+                print("Process", rank)
+                dist.barrier()
+        # separator
+        if cur_iter != num_iter-1:
+            if rank != 0:
+                dist.barrier()
+            else:
+                print("---")
+                dist.barrier()
 
 
 if __name__ == "__main__":
