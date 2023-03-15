@@ -40,7 +40,7 @@ def get_atol_rtol(local_rank, batch_size, n_features, bn):
     backward_rtol = torch.max(torch.abs((custom_backward - reference_backward) / custom_backward))
     return forward_atol, forward_rtol, backward_atol, backward_rtol
 
-def run_experiments(local_rank, bn):
+def run_experiments(local_rank):
     fig, axs = plt.subplots(figsize=(10, 12), nrows=2, ncols=2)
     batch_size_list = [32, 64]
     features_list = [128, 256, 512, 1024]
