@@ -36,16 +36,16 @@ def get_atol_rtol(local_rank, batch_size, n_features):
     custom_backward = data1.grad.data
     reference_backward = data2.grad.data
     forward_atol = torch.max(torch.abs(custom_forward - reference_forward))
-    forward_rtol = torch.max(torch.abs((custom_forward - reference_forward) / custom_forward))
+    forward_rtol = torch.max(torch.abs((custom_forward - reference_forward) / reference_forward))
     backward_atol = torch.max(torch.abs(custom_backward - reference_backward))
-    backward_rtol = torch.max(torch.abs((custom_backward - reference_backward) / custom_backward))
+    backward_rtol = torch.max(torch.abs((custom_backward - reference_backward) / reference_backward))
     return forward_atol, forward_rtol, backward_atol, backward_rtol
 
 def run_experiments(local_rank):
     batch_size_list = [32, 64]
     features_list = [128, 256, 512, 1024]
 
-    for i, batch_size in enumerate(batch_size_list):
+    for batch_size in batch_size_list:
         results = defaultdict(dict)
         for n_features in features_list:
             forward_atol, forward_rtol, backward_atol, backward_rtol = get_atol_rtol(local_rank, batch_size, n_features)
