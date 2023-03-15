@@ -73,11 +73,11 @@ def get_dataset_shard(dataset, local_rank):
     data_size = len(dataset)
     world_size = dist.get_world_size()
     shard_size = len(range(0, data_size, world_size))
-    pic_shape = dataset[0].shape
+    pic_shape = dataset[0][0].shape
 
     shard = torch.empty(shard_size, *pic_shape)
     targets = torch.empty(shard_size)
-    for i, j in enumerate(range(0, data_size, world_size)):
+    for i, j in enumerate(range(local_rank, data_size, world_size)):
         shard[i], targets[i] = dataset[j]
     return shard, targets
 
