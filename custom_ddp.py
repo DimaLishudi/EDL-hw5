@@ -137,6 +137,7 @@ def run_training(rank, size, device):
     batch_count = 0
     for epoch in range(10):
         if rank == 0:
+            print("\n" + "="*70 + '\n')
             print("Epoch", epoch)
         epoch_loss_acc = torch.zeros((2,), device=device)
 
