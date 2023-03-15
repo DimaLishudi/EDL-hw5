@@ -11,6 +11,7 @@ from torchvision.datasets import CIFAR100
 
 from syncbn import SyncBatchNorm
 import argparse
+from time import perf_counter
 
 torch.set_num_threads(1)
 
@@ -38,7 +39,7 @@ class Net(nn.Module):
         self.dropout2 = nn.Dropout(0.5)
         self.fc1 = nn.Linear(6272, 128)
         self.fc2 = nn.Linear(128, 100)
-        self.bn1 = SyncBatchNorm(128, affine=False)  # to be replaced with SyncBatchNorm
+        self.bn1 = SyncBatchNorm(128)  # to be replaced with SyncBatchNorm
 
     def forward(self, x):
         x = self.conv1(x)
@@ -119,6 +120,19 @@ def run_training(rank, size, device):
 
     num_batches = len(loader)
 
+    # warm up the model on 1 batch
+    
+    for data, target in loader:
+        data = data.to(device)
+        target = target.to(device)
+
+        output = model(data)
+        break
+
+    dist.barrier()
+    if rank == 0:
+        start = perf_counter()
+
     optimizer.zero_grad()
     batch_count = 0
     for _ in range(10):
@@ -162,6 +176,12 @@ def run_training(rank, size, device):
             epoch_loss_acc /= len(valid_dataset)
             if dist.get_rank() == 0:
                 print(f"Rank {dist.get_rank()}, loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+
+    dist.barrier()
+    if rank == 0:
+        print("Final time:", perf_counter() - start)
+        if torch.cuda.is_available():
+            print("Memory footprint:", torch.cuda.max_memory_allocated())
 
 
 if __name__ == "__main__":
