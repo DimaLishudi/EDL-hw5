@@ -13,7 +13,6 @@ torch.set_num_threads(1)
 def init_process(local_rank):
     """Initialize the distributed environment."""
     dist.init_process_group("gloo", rank=local_rank)
-    size = dist.get_world_size()
     run_experiments(local_rank)
 
 
@@ -23,7 +22,7 @@ def get_atol_rtol(local_rank, batch_size, n_features):
     custom_bn = SyncBatchNorm(n_features)
     reference_bn = nn.BatchNorm1d(n_features, affine=False)
     torch.manual_seed(local_rank)
-    data1 = torch.randn(batch_size//2, n_features)
+    data1 = torch.randn(batch_size//dist.get_world_size(), n_features)
     data2 = torch.clone(data1).detach()
     data1.requires_grad_()
     data2.requires_grad_()
@@ -72,6 +71,7 @@ def run_experiments(local_rank):
     axs[0][1].legend(handles=handles)
     axs[1][0].legend(handles=handles)
     axs[1][1].legend(handles=handles)
+    plt.savefig(f"cmp_dist.get_world_size().pdf")
 
 
 if __name__ == "__main__":
