@@ -169,4 +169,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--device', type=str, nargs='?', const="cpu")
     args = parser.parse_args()
+    print(args.device)
     init_process(local_rank, fn=run_training, device_type=args.device)
