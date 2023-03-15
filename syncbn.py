@@ -47,7 +47,7 @@ class sync_batch_norm(Function):
     def backward(ctx, grad_output):
         # don't forget to return a tuple of gradients wrt all arguments of `forward`!
         # Derivation of the following formulas are presented in report.ipynb
-        # there g - grad_output
+        # there g -- grad_output
         t, s, B = ctx.saved_tensors
         num_features = t.shape[1]
 
@@ -91,6 +91,8 @@ class SyncBatchNorm(_BatchNorm):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         if not self.training and self.track_running_stats:
             sqrt_var = torch.sqrt(self.running_var + self.eps)
+            print(self.running_mean)
+            print(self.running_var)
             return (input - self.running_mean) / sqrt_var
         else:
             return self.bn_func(input, self.running_mean, self.running_var, self.eps, self.momentum)
