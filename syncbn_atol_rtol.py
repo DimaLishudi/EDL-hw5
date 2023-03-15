@@ -68,7 +68,7 @@ def run_experiments(local_rank):
     axs[0][1].legend()
     axs[1][0].legend()
     axs[1][1].legend()
-    plt.savefig(f"cmp_{dist.get_world_size()}.pdf")
+    plt.savefig(f"cmp_{dist.get_world_size()}.png")
 
 
 if __name__ == "__main__":
