@@ -56,13 +56,13 @@ def run_experiments(local_rank):
             backward_atols.append(backward_atol.detach().numpy())
             backward_rtols.append(backward_rtol.detach().numpy())
         if local_rank == 0:
-            axs[0][0].scatter(features_list, forward_atol, linestyle=styles[i])
+            axs[0][0].scatter(features_list, forward_atols, linestyle=styles[i])
             axs[0][0].set(xlabel="n_features", ylabel="forward atol")
-            axs[0][1].scatter(features_list, forward_rtol, linestyle=styles[i])
+            axs[0][1].scatter(features_list, forward_rtols, linestyle=styles[i])
             axs[0][0].set(xlabel="n_features", ylabel="forward rtol")
-            axs[1][0].scatter(features_list, backward_atol, linestyle=styles[i])
+            axs[1][0].scatter(features_list, backward_atols, linestyle=styles[i])
             axs[0][0].set(xlabel="n_features", ylabel="backward atol")
-            axs[1][1].scatter(features_list, backward_rtol, linestyle=styles[i])
+            axs[1][1].scatter(features_list, backward_rtols, linestyle=styles[i])
             axs[0][0].set(xlabel="n_features", ylabel="backward rtol")
     
         line = plt.Line2D([0], [0], label=f"batch_size = {batch_size}", color='k', linestyle=styles[i])
