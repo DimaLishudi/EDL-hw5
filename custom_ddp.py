@@ -39,7 +39,7 @@ class Net(nn.Module):
         self.dropout2 = nn.Dropout(0.5)
         self.fc1 = nn.Linear(6272, 128)
         self.fc2 = nn.Linear(128, 100)
-        self.bn1 = SyncBatchNorm(128)  # to be replaced with SyncBatchNorm
+        self.bn1 = nn.BatchNorm1d(128, affine=False)  # to be replaced with SyncBatchNorm
 
     def forward(self, x):
         x = self.conv1(x)
@@ -77,7 +77,7 @@ def get_dataset_shard(dataset, local_rank):
     pic_shape = dataset[0][0].shape
 
     shard = torch.empty(shard_size, *pic_shape)
-    targets = torch.empty(shard_size)
+    targets = torch.empty(shard_size, dtype=int)
     for i, j in enumerate(range(local_rank, data_size, world_size)):
         shard[i], targets[i] = dataset[j]
     return shard, targets
