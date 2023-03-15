@@ -6,7 +6,9 @@ import torch.nn as nn
 
 from syncbn import SyncBatchNorm
 import argparse
-import matplotlib.pyplot as plt
+import pandas as pd
+from collections import defaultdict
+
 torch.set_num_threads(1)
 
 
@@ -40,35 +42,21 @@ def get_atol_rtol(local_rank, batch_size, n_features):
     return forward_atol, forward_rtol, backward_atol, backward_rtol
 
 def run_experiments(local_rank):
-    fig, axs = plt.subplots(figsize=(10, 12), nrows=2, ncols=2)
     batch_size_list = [32, 64]
     features_list = [128, 256, 512, 1024]
-    colors = ["b", "y"]
+
     for i, batch_size in enumerate(batch_size_list):
-        forward_atols, forward_rtols = [], []
-        backward_atols, backward_rtols = [], []
+        results = defaultdict(dict)
         for n_features in features_list:
             forward_atol, forward_rtol, backward_atol, backward_rtol = get_atol_rtol(local_rank, batch_size, n_features)
-            forward_atols.append(forward_atol.detach().numpy())
-            forward_rtols.append(forward_rtol.detach().numpy())
-            backward_atols.append(backward_atol.detach().numpy())
-            backward_rtols.append(backward_rtol.detach().numpy())
+            results[f"n_features={n_features}"]["forward_atol"] = forward_atol.detach().item()
+            results[f"n_features={n_features}"]["forward_rtol"] = forward_rtol.detach().item()
+            results[f"n_features={n_features}"]["backward_atol"] = backward_atol.detach().item()
+            results[f"n_features={n_features}"]["backward_rtol"] = backward_rtol.detach().item()
         if local_rank == 0:
-            axs[0][0].scatter(features_list, forward_atols, c=colors[i], label=f"batch_size = {batch_size}")
-            axs[0][0].set(xlabel="n_features", ylabel="forward atol")
-            axs[0][1].scatter(features_list, forward_rtols, c=colors[i], label=f"batch_size = {batch_size}")
-            axs[0][1].set(xlabel="n_features", ylabel="forward rtol")
-            axs[1][0].scatter(features_list, backward_atols, c=colors[i], label=f"batch_size = {batch_size}")
-            axs[1][0].set(xlabel="n_features", ylabel="backward atol")
-            axs[1][1].scatter(features_list, backward_rtols, c=colors[i], label=f"batch_size = {batch_size}")
-            axs[1][1].set(xlabel="n_features", ylabel="backward rtol")
-    
-    axs[0][0].legend()
-    axs[0][1].legend()
-    axs[1][0].legend()
-    axs[1][1].legend()
-    plt.savefig(f"cmp_{dist.get_world_size()}.png")
-
+            print("Batch size:", batch_size)
+            print(pd.DataFrame.from_dict(results))
+            print("\n" + "="*70 + "\n")
 
 if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])
