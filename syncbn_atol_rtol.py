@@ -43,7 +43,7 @@ def run_experiments(local_rank):
     fig, axs = plt.subplots(figsize=(10, 12), nrows=2, ncols=2)
     batch_size_list = [32, 64]
     features_list = [128, 256, 512, 1024]
-    styles = ["--", ":"]
+    colors = ["b", "y"]
     handles = []
     for i, batch_size in enumerate(batch_size_list):
         forward_atols, forward_rtols = [], []
@@ -55,22 +55,19 @@ def run_experiments(local_rank):
             backward_atols.append(backward_atol.detach().numpy())
             backward_rtols.append(backward_rtol.detach().numpy())
         if local_rank == 0:
-            print("START")
-            axs[0][0].scatter(features_list, forward_atols, linestyle=styles[i])
+            axs[0][0].scatter(features_list, forward_atols, c=colors[i], label=f"batch_size = {batch_size}")
             axs[0][0].set(xlabel="n_features", ylabel="forward atol")
-            axs[0][1].scatter(features_list, forward_rtols, linestyle=styles[i])
+            axs[0][1].scatter(features_list, forward_rtols, c=colors[i], label=f"batch_size = {batch_size}")
             axs[0][1].set(xlabel="n_features", ylabel="forward rtol")
-            axs[1][0].scatter(features_list, backward_atols, linestyle=styles[i])
+            axs[1][0].scatter(features_list, backward_atols, c=colors[i], label=f"batch_size = {batch_size}")
             axs[1][0].set(xlabel="n_features", ylabel="backward atol")
-            axs[1][1].scatter(features_list, backward_rtols, linestyle=styles[i])
+            axs[1][1].scatter(features_list, backward_rtols, c=colors[i], label=f"batch_size = {batch_size}")
             axs[1][1].set(xlabel="n_features", ylabel="backward rtol")
     
-        line = plt.Line2D([0], [0], label=f"batch_size = {batch_size}", color='k', linestyle=styles[i])
-        handles.append(line)
-    axs[0][0].legend(handles=handles)
-    axs[0][1].legend(handles=handles)
-    axs[1][0].legend(handles=handles)
-    axs[1][1].legend(handles=handles)
+    axs[0][0].legend()
+    axs[0][1].legend()
+    axs[1][0].legend()
+    axs[1][1].legend()
     plt.savefig(f"cmp_{dist.get_world_size()}.pdf")
 
 
