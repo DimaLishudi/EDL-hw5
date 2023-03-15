@@ -91,6 +91,7 @@ def run_training(rank, size, device):
     valid_loader = DataLoader(valid_dataset, sampler=DistributedSampler(valid_dataset, size, rank), batch_size=batch_size)
     grad_accum_steps = 2
 
+    torch.manual_seed(0)
     local_model = Net().to(device)
     model = DDP(local_model, device_ids=[rank], output_device=rank)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
