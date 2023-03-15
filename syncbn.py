@@ -41,10 +41,11 @@ class sync_batch_norm(Function):
         running_var = running_var * (1 - momentum) + var * momentum
         
         ctx.save_for_backward(t, var, msg[-1])
-        return res
+        ctx.mark_non_differentiable(running_mean, running_var)
+        return res, running_mean, running_var
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output, grad_mean, grad_var):
         # don't forget to return a tuple of gradients wrt all arguments of `forward`!
         # Derivation of the following formulas are presented in report.ipynb
         # there g -- grad_output
@@ -91,9 +92,8 @@ class SyncBatchNorm(_BatchNorm):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         if not self.training and self.track_running_stats:
             sqrt_var = torch.sqrt(self.running_var + self.eps)
-            print(self.running_mean)
-            print(self.running_var)
             return (input - self.running_mean) / sqrt_var
         else:
-            return self.bn_func(input, self.running_mean, self.running_var, self.eps, self.momentum)
+            res, self.running_mean, self.running_var = self.bn_func(input, self.running_mean, self.running_var, self.eps, self.momentum)
+            return res
 
