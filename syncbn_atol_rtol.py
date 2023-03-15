@@ -18,7 +18,7 @@ def init_process(local_rank):
 
 
 
-def get_atol_rtol(local_rank, batch_size, n_features, bn):
+def get_atol_rtol(local_rank, batch_size, n_features):
     torch.manual_seed(0)
     custom_bn = SyncBatchNorm(n_features)
     reference_bn = nn.BatchNorm1d(n_features, affine=False)
@@ -50,7 +50,7 @@ def run_experiments(local_rank):
         forward_atols, forward_rtols = [], []
         backward_atols, backward_rtols = [], []
         for n_features in features_list:
-            forward_atol, forward_rtol, backward_atol, backward_rtol = get_atol_rtol(local_rank, batch_size, n_features, bn)
+            forward_atol, forward_rtol, backward_atol, backward_rtol = get_atol_rtol(local_rank, batch_size, n_features)
             forward_atols.append(forward_atol)
             forward_rtols.append(forward_rtol)
             backward_atols.append(backward_atol)
