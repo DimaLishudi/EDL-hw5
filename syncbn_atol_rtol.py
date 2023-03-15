@@ -51,10 +51,10 @@ def run_experiments(local_rank):
         backward_atols, backward_rtols = [], []
         for n_features in features_list:
             forward_atol, forward_rtol, backward_atol, backward_rtol = get_atol_rtol(local_rank, batch_size, n_features)
-            forward_atols.append(forward_atol)
-            forward_rtols.append(forward_rtol)
-            backward_atols.append(backward_atol)
-            backward_rtols.append(backward_rtol)
+            forward_atols.append(forward_atol.detach().numpy())
+            forward_rtols.append(forward_rtol.detach().numpy())
+            backward_atols.append(backward_atol.detach().numpy())
+            backward_rtols.append(backward_rtol.detach().numpy())
         if local_rank == 0:
             axs[0][0].scatter(features_list, forward_atol, linestyle=styles[i])
             axs[0][0].set(xlabel="n_features", ylabel="forward atol")
