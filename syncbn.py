@@ -21,8 +21,9 @@ class sync_batch_norm(Function):
         # Compute statistics, sync statistics, apply them to the input
         # Also, store relevant quantities to be used on the backward pass with `ctx.save_for_backward`
         
+        device = input.device
         batch_size, num_features = input.shape
-        msg = torch.empty(2*num_features + 1)
+        msg = torch.empty(2*num_features + 1, device=device)
         msg[0:num_features] = input.sum(dim=0)                   # first moment
         msg[num_features:2*num_features] = (input**2).sum(dim=0) # second moment
         msg[-1] = batch_size # local batch size
@@ -50,7 +51,8 @@ class sync_batch_norm(Function):
         t, s, B = ctx.saved_tensors
         num_features = t.shape[1]
 
-        msg = torch.empty(3*num_features)
+        device = grad_output.device
+        msg = torch.empty(3*num_features, device=device)
         msg[:num_features] = grad_output.sum(dim=0)
         msg[num_features:2*num_features] = t.sum(dim=0)
         msg[2*num_features:] = (grad_output*t).sum(dim=0)
