@@ -39,7 +39,7 @@ class Net(nn.Module):
         self.dropout2 = nn.Dropout(0.5)
         self.fc1 = nn.Linear(6272, 128)
         self.fc2 = nn.Linear(128, 100)
-        self.bn1 = SyncBatchNorm(128)  # to be replaced with SyncBatchNorm
+        self.bn1 = SyncBatchNorm(128)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -182,9 +182,10 @@ def run_training(rank, size, device):
 
     dist.barrier()
     if rank == 0:
-        print("Final time:", perf_counter() - start)
+        print("\n" + "="*70 + '\n')
+        print("Final time:", round(perf_counter() - start), "sec")
         if torch.cuda.is_available():
-            print("Memory footprint:", torch.cuda.max_memory_allocated() / 1e6, "Mb")
+            print("Memory footprint:", round(torch.cuda.max_memory_allocated() / 1e6), "Mb")
 
 
 if __name__ == "__main__":
