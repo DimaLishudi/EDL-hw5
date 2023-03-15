@@ -29,12 +29,10 @@ class sync_batch_norm(Function):
         msg[-1] = batch_size # local batch size
 
         dist.all_reduce(msg, dist.ReduceOp.SUM)
-        print("TOTAL_BS", msg[-1])
         
         mean = msg[0:num_features] / msg[-1]
-        var = msg[num_features:2*num_features] / msg[-1] - mean
+        var = msg[num_features:2*num_features] / msg[-1] - mean**2
         sqrt_var = torch.sqrt(var + eps)
-        print("SQRT VAR", sqrt_var)
 
         t = input - mean
         res = t / sqrt_var
