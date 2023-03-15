@@ -71,7 +71,7 @@ def run_experiments(local_rank):
     axs[0][1].legend(handles=handles)
     axs[1][0].legend(handles=handles)
     axs[1][1].legend(handles=handles)
-    plt.savefig(f"cmp_dist.get_world_size().pdf")
+    plt.savefig(f"cmp_{dist.get_world_size()}.pdf")
 
 
 if __name__ == "__main__":
