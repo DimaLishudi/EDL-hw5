@@ -126,7 +126,7 @@ def run_training(rank, size, device):
             target = target.to(device)
 
             output = model(data)
-            loss = torch.nn.functional.cross_entropy(output, target)
+            loss = torch.nn.functional.cross_entropy(output, target) / grad_accum_steps
             epoch_loss_acc[0] += loss.detach() / num_batches
             loss.backward()
             if batch_count % grad_accum_steps == 0:

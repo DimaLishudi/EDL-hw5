@@ -59,10 +59,8 @@ class Net(nn.Module):
         output = self.fc2(x)
         return output
 
-# added scale: we need to divide by grad_accum_steps
-# otherwise for each batch size we need to choose new step size
-def average_gradients(model, scale=1):
-    size = float(dist.get_world_size()) * scale
+def average_gradients(model):
+    size = float(dist.get_world_size())
     for param in model.parameters():
         dist.all_reduce(param.grad.data, op=dist.ReduceOp.SUM)
         param.grad.data /= size
@@ -149,7 +147,7 @@ def run_training(rank, size, device):
             target = target.to(device)
 
             output = model(data)
-            loss = torch.nn.functional.cross_entropy(output, target)
+            loss = torch.nn.functional.cross_entropy(output, target) / grad_accum_steps
             epoch_loss_acc[0] += loss.detach() / num_batches
             loss.backward()
             if batch_count % grad_accum_steps == 0:
