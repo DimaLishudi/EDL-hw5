@@ -40,7 +40,7 @@ class sync_batch_norm(Function):
         running_mean = running_mean * (1 - momentum) + mean * momentum
         running_var = running_var * (1 - momentum) + var * momentum
         
-        ctx.save_for_backward(t, var, msg[-1])
+        ctx.save_for_backward(t, sqrt_var, msg[-1])
         ctx.mark_non_differentiable(running_mean, running_var)
         return res, running_mean, running_var
 
@@ -54,9 +54,9 @@ class sync_batch_norm(Function):
 
         device = grad_output.device
         msg = torch.empty(3*num_features, device=device)
-        msg[:num_features] = grad_output.sum(dim=0)
-        msg[num_features:2*num_features] = t.sum(dim=0)
-        msg[2*num_features:] = (grad_output*t).sum(dim=0)
+        msg[:num_features] = grad_output.sum(dim=0)       # 1^T g
+        msg[num_features:2*num_features] = t.sum(dim=0)   # 1^T t
+        msg[2*num_features:] = (grad_output*t).sum(dim=0) # t^T g
         dist.all_reduce(msg, dist.ReduceOp.SUM)
 
         res = grad_output / s \

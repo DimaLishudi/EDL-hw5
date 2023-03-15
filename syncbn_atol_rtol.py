@@ -44,7 +44,6 @@ def run_experiments(local_rank):
     batch_size_list = [32, 64]
     features_list = [128, 256, 512, 1024]
     colors = ["b", "y"]
-    handles = []
     for i, batch_size in enumerate(batch_size_list):
         forward_atols, forward_rtols = [], []
         backward_atols, backward_rtols = [], []
