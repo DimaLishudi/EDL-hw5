@@ -136,7 +136,7 @@ def run_training(rank, size, device):
         dist.all_reduce(epoch_loss_acc.data, op=dist.ReduceOp.SUM)
         epoch_loss_acc /= world_size
         if dist.get_rank() == 0:
-            print(f"TRAIN RUNNING STATS:\n loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+            print(f"TRAIN: loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
         # validation loop
         with torch.inference_mode():
@@ -154,7 +154,7 @@ def run_training(rank, size, device):
             dist.all_reduce(epoch_loss_acc.data, op=dist.ReduceOp.SUM)
             epoch_loss_acc /= len(valid_dataset)
             if dist.get_rank() == 0:
-                print(f"VALID STATS:\nloss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+                print(f"VALID: loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
     dist.barrier()
     if rank == 0:
