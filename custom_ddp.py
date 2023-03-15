@@ -151,7 +151,7 @@ def run_training(rank, size, device):
             epoch_loss_acc[0] += loss.detach() / num_batches
             loss.backward()
             if batch_count % grad_accum_steps == 0:
-                average_gradients(model, grad_accum_steps)
+                average_gradients(model)
                 optimizer.step()
                 optimizer.zero_grad()
 
