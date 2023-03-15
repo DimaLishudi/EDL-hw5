@@ -39,7 +39,7 @@ class Net(nn.Module):
         self.dropout2 = nn.Dropout(0.5)
         self.fc1 = nn.Linear(6272, 128)
         self.fc2 = nn.Linear(128, 100)
-        self.bn1 = nn.BatchNorm1d(128, affine=False)  # to be replaced with SyncBatchNorm
+        self.bn1 = SyncBatchNorm(128)  # to be replaced with SyncBatchNorm
 
     def forward(self, x):
         x = self.conv1(x)
@@ -157,7 +157,7 @@ def run_training(rank, size, device):
         dist.all_reduce(epoch_loss_acc.data, op=dist.ReduceOp.SUM)
         epoch_loss_acc /= world_size
         if dist.get_rank() == 0:
-            print(f"Rank {dist.get_rank()}, loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+            print(f"Rank {dist.get_rank()}, TRAIN stats:\n loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
         # validation loop
         with torch.inference_mode():
@@ -175,7 +175,7 @@ def run_training(rank, size, device):
             dist.all_reduce(epoch_loss_acc.data, op=dist.ReduceOp.SUM)
             epoch_loss_acc /= len(valid_dataset)
             if dist.get_rank() == 0:
-                print(f"Rank {dist.get_rank()}, loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+                print(f"Rank {dist.get_rank()}, VALID stats:\nloss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
     dist.barrier()
     if rank == 0:
@@ -189,5 +189,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--device', type=str, nargs='?', default="cpu")
     args = parser.parse_args()
-    print(args.device)
     init_process(local_rank, fn=run_training, device_type=args.device)
