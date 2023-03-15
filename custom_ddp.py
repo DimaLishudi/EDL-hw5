@@ -114,6 +114,7 @@ def run_training(rank, size, device):
     valid_loader = DataLoader(TensorDataset(shard, targets), batch_size=batch_size)
     grad_accum_steps = 2
 
+    torch.manual_seed(0)
     model = Net()
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
@@ -141,6 +142,7 @@ def run_training(rank, size, device):
             print("Epoch", epoch)
         epoch_loss_acc = torch.zeros((2,), device=device)
 
+        model.train()
         for data, target in loader:
             batch_count += 1
             data = data.to(device)
@@ -163,6 +165,7 @@ def run_training(rank, size, device):
             print(f"TRAIN: loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
         # validation loop
+        model.eval()
         with torch.inference_mode():
             epoch_loss_acc = torch.zeros((2,), device=device)
             for data, target in valid_loader:

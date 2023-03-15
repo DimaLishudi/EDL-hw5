@@ -119,6 +119,7 @@ def run_training(rank, size, device):
             print("Epoch", epoch)
         epoch_loss_acc = torch.zeros((2,), device=device)
 
+        model.train()
         for data, target in loader:
             batch_count += 1
             data = data.to(device)
@@ -140,6 +141,7 @@ def run_training(rank, size, device):
             print(f"TRAIN: loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
         # validation loop
+        model.eval()
         with torch.inference_mode():
             epoch_loss_acc = torch.zeros((2,), device=device)
             for data, target in valid_loader:
