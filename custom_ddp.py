@@ -135,7 +135,9 @@ def run_training(rank, size, device):
 
     optimizer.zero_grad()
     batch_count = 0
-    for _ in range(10):
+    for epoch in range(10):
+        if rank == 0:
+            print("Epoch", epoch)
         epoch_loss_acc = torch.zeros((2,), device=device)
 
         for data, target in loader:
@@ -157,7 +159,7 @@ def run_training(rank, size, device):
         dist.all_reduce(epoch_loss_acc.data, op=dist.ReduceOp.SUM)
         epoch_loss_acc /= world_size
         if dist.get_rank() == 0:
-            print(f"Rank {dist.get_rank()}, TRAIN stats:\n loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+            print(f"Rank {dist.get_rank()}, TRAIN RUNNING STATS:\n loss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
         # validation loop
         with torch.inference_mode():
@@ -175,13 +177,13 @@ def run_training(rank, size, device):
             dist.all_reduce(epoch_loss_acc.data, op=dist.ReduceOp.SUM)
             epoch_loss_acc /= len(valid_dataset)
             if dist.get_rank() == 0:
-                print(f"Rank {dist.get_rank()}, VALID stats:\nloss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
+                print(f"VALID STATS:\nloss: {epoch_loss_acc[0].item() / num_batches}, acc: {epoch_loss_acc[1].item()}")
 
     dist.barrier()
     if rank == 0:
         print("Final time:", perf_counter() - start)
         if torch.cuda.is_available():
-            print("Memory footprint:", torch.cuda.max_memory_allocated())
+            print("Memory footprint:", torch.cuda.max_memory_allocated() / 1e6, "Mb")
 
 
 if __name__ == "__main__":
