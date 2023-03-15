@@ -167,6 +167,6 @@ def run_training(rank, size, device):
 if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--device', type=str)
+    parser.add_argument('-d', '--device', type=str, nargs='?', const="cpu")
     args = parser.parse_args()
     init_process(local_rank, fn=run_training, device_type=args.device)
